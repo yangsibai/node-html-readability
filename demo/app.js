@@ -28,16 +28,22 @@ app.use('/', function (req, res) {
 				res.send(err);
 			}
 			else {
-				article = new readability({
+				read = new readability({
+					url: url,
+					debug: true,
 					content: body.toString()
 				});
-				res.send(article.html);
+				article = read.run();
+				res.render("article", article);
 			}
 		})
 	}
 	else {
 		demoSites = [
-			"http://weblogs.asp.net/bsimser/day-to-day-with-subversion"
+			"http://weblogs.asp.net/bsimser/day-to-day-with-subversion",
+			"http://jianshu.io/p/77c949565112",
+			"http://sports.sina.com.cn/nba/2014-08-24/03547305054.shtml",
+			"https://medium.com/code-adventures/farewell-node-js-4ba9e7f3e52b"
 		];
 		res.render("index", {
 			title: "readability demo",
@@ -66,5 +72,5 @@ app.use(function (err, req, res, next) {
 });
 
 var server = app.listen(3000, function () {
-	debug('Express server listening on port ' + server.address().port);
+	console.log('Express server listening on port ' + server.address().port);
 });

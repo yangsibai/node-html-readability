@@ -4,13 +4,74 @@ regexHelper = require("./regexHelper")
 url = require("url")
 util = require("./util")
 
-dbg = ()->
-#	console.log.apply this, arguments
-
 class readability
 	constructor: (@options)->
+		defaultOptions =
+			debug: false
+		for k of defaultOptions
+			@options[k] = defaultOptions[k] if _.isUndefined(@options[k])
 		@$ = cheerio.load(util.washHtml(@options.content))
 
+	run: ()->
+		title = @grabTitle()
+		article = @grabArticle()
+
+		res =
+			title: title
+			text: article.text
+			html: article.html
+			url: @options.url
+
+		return res
+
+	dbg: ()->
+		if @options.debug
+			console.log.apply this, arguments
+
+	grabTitle: ()->
+		@titleCandidates = []
+		titleNodes = @$("head title")
+		if titleNodes.length isnt 1
+			return ""
+
+		@title = cheerio(titleNodes[0]).text().trim()
+
+		for i in [1..3]
+			tag = "h#{i}"
+			nodes = @$(tag)
+			for node,j in nodes
+				_score = 7 - i - j #越到后面的扣分越凶
+				_score = 1 if _score < 1
+				_node = cheerio(node)
+				_text = _node.text().trim()
+				_score += 6 if regexHelper.likeTitle(_getSignature(node))
+				_score = _score * (1 + @getTextInTitleWeight(_text))
+				@titleCandidates.push
+					text: _text
+					score: _score
+
+		titleClass = @$(".title")
+		for titleNode in titleClass
+			_text = cheerio(titleNode).text().trim()
+			_score = 6
+			_score = _score * (1 + @getTextInTitleWeight(_text))
+			@titleCandidates.push
+				text: _text
+				score: _score
+
+		betterTitle =
+			score: 6
+			text: @title
+
+		for candidate in @titleCandidates
+			if candidate.score > betterTitle.score
+				betterTitle = candidate
+
+		return betterTitle.text
+
+	###
+        grab article content
+    ###
 	grabArticle: ()->
 		@removeUnlikelyNode()
 		@selectCandidates()
@@ -23,9 +84,27 @@ class readability
 		@prepArticle()
 
 		return {
-			text: @articleContent.text()
-			html: @articleContent.html()
+		text: @articleContent.text()
+		html: @articleContent.html()
 		}
+
+	###
+        text is one of title pieces,may be a good title
+        @param {String} text
+        @return {Boolean}
+    ###
+	getTextInTitleWeight: (text)->
+		if @title.indexOf(text) isnt -1
+			return text.length / @title.length
+		return 0
+
+	###
+        get node's signature:class name + id
+        @param {Object} node
+        @return {String} signature
+    ###
+	_getSignature = (node)->
+		return (node.attribs?.class or "") + (node.attribs?.id or "")
 
 	###
 		remove unlikely content node
@@ -34,17 +113,17 @@ class readability
 	removeUnlikelyNode: ()->
 		allElements = @$("*")
 
-		allElements.each (i, elem)->
-			node = cheerio(this)
-			unlikelyMatchString = (elem.attribs?.class or "") + (elem.attribs?.id or "")
+		for elem in allElements
+			node = cheerio(elem)
+			_sign = _getSignature(elem)
 			tagName = elem.name
 
 			continueFlag = false
 
 			#remove unlikely candidate node
-			if unlikelyMatchString and (tagName isnt "body") and regexHelper.unlikelyCandidates(unlikelyMatchString) and (not regexHelper.okMaybeItsACandidate(unlikelyMatchString))
+			if _sign and (tagName isnt "body") and regexHelper.unlikelyCandidates(_sign) and (not regexHelper.okMaybeItsACandidate(_sign))
 				node.remove()
-				dbg "remove node:#{unlikelyMatchString}"
+				@dbg "remove node:#{_sign}"
 				continueFlag = true
 
 			#turn all dives that don't have children block level elements into p
@@ -60,41 +139,40 @@ class readability
 		@return {Array} candidates array
 	###
 	selectCandidates: ()->
-		candidates = []
+		@candidates = []
 
-		@$("p").each (i, elem)->
-			node = cheerio(this)
+		allPElements = @$("p")
+		for elem in allPElements
+			node = cheerio(elem)
 			parentNode = elem.parent
 			unless parentNode
-				return
+				continue
 
 			if _.isUndefined(parentNode.score)
 				util.initializeNode(parentNode)
-				candidates.push parentNode
+				@candidates.push parentNode
 			else
-				dbg "parent score:#{parentNode.score}"
+				@dbg "parent score:#{parentNode.score}"
 
 			grandParentNode = parentNode.parent
 			if grandParentNode and _.isUndefined(grandParentNode.score)
 				util.initializeNode(grandParentNode)
-				candidates.push(grandParentNode)
+				@candidates.push(grandParentNode)
 			else
-				dbg "grantParent score:#{grandParentNode.score}" unless _.isUndefined(grandParentNode)
+				@dbg "grantParent score:#{grandParentNode.score}" unless _.isUndefined(grandParentNode)
 
 			innerText = node.text()
 
 			if util.justWords(innerText)
-				dbg "may be just words => #{innerText}"
-				return
+				@dbg "may be just words => #{innerText}"
+				continue
 
 			contentScore = util.contentScore(innerText)
 
 			parentNode.score += contentScore
 			grandParentNode.score += contentScore / 2 unless _.isUndefined(grandParentNode)
 
-
-		dbg "candidates count:#{candidates.length}"
-		@candidates = candidates
+		@dbg "candidates count:#{@candidates.length}"
 
 	###
 		select out top candidates
@@ -102,22 +180,19 @@ class readability
 		@return {Object} top candidate
 	###
 	selectTopCandidate: ()->
-		topCandidate = null
 		for candidate,i in @candidates
 			linkDensity = util.getLinkDensity(candidate)
 			if linkDensity > 0
 				candidate.score = candidate.score * (1 - linkDensity)
 
-			if (not topCandidate) or (candidate.score > topCandidate.score)
-				dbg "find new better candidate"
-				topCandidate = candidate
+			if (not @topCandidate) or (candidate.score > @topCandidate.score)
+				@dbg "find new better candidate"
+				@topCandidate = candidate
 
 		# if we still have no top candidate,use the body
-		if topCandidate is null or topCandidate.name is "body"
-			topCandidate= cheerio("<div></div>").html(cheerio(topCandidate).html())[0]
-			util.initializeNode(topCandidate)
-
-		@topCandidate = topCandidate
+		if @topCandidate is null or @topCandidate.name is "body"
+			@topCandidate = cheerio("<div></div>").html(cheerio(@topCandidate).html())[0]
+			util.initializeNode(@topCandidate)
 
 	###
 		pull out all good nodes according to top candidate
@@ -125,13 +200,13 @@ class readability
 		@return {Array} good nodes array
 	###
 	pullAllGoodNodes: ()->
-		goodNodes = []
+		@goodNodes = []
 		siblingNodes = []
 		if @topCandidate.parent
 			siblingNodes = @topCandidate.parent.children
 
 		if siblingNodes.length > 0
-			dbg "sibling count:#{siblingNodes.length}"
+			@dbg "sibling count:#{siblingNodes.length}"
 			topCandidateClassName = @topCandidate.attribs["class"]
 			siblingScoreThreshold = Math.max(10, @topCandidate.score * 0.2)
 
@@ -150,7 +225,7 @@ class readability
 						append = true
 
 					if sibling.name is "p"
-						$sibling = $(sibling)
+						$sibling = cheerio(sibling)
 						innerText = $sibling.text()
 						linkDensity = util.getLinkDensity($sibling)
 
@@ -159,12 +234,13 @@ class readability
 						else if (innerText.length <= 80 and linkDensity is 0 and (innerText.search(/\.( | $)/) isnt -1))
 							append = true
 				if append
-					goodNodes.push sibling
+					@goodNodes.push sibling
 		else
-			goodNodes.push @topCandidate
+			@goodNodes.push @topCandidate
 
-		@goodNodes = goodNodes
-
+	###
+		prepare article,clean html
+	###
 	prepArticle: ()->
 		util.killBreaks(@articleContent)
 

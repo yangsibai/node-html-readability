@@ -15,24 +15,29 @@ regexps =
 	nextLink: /(next|weiter|continue|next_page|>([^\|]|$)|([^\|]|$))/i # Match: next, continue, >, >>, ? but not >|, ?| as those usually mean last.
 	prevLink: /(prev|earl|old|new|<|)/i
 	indexLink: /http.*(\\.com\.cn|.net|\.com|\.cn)/i
+	title:/title|head/gi
 
 exports.unlikelyCandidates = (str)->
 	return str.search(regexps.unlikelyCandidates) isnt -1
 
 exports.okMaybeItsACandidate = (str)->
-	return str.search(regexps.okMaybeItsACandidate) isnt -1
+	return str and str.search(regexps.okMaybeItsACandidate) isnt -1
 
 exports.isVideo=(str)->
-	return str.search(regexps.videos) isnt -1
+	return str and str.search(regexps.videos) isnt -1
 
 exports.divToPElements=(str)->
-	return str.search(regexps.divToPElements) isnt -1
+	return str and str.search(regexps.divToPElements) isnt -1
 
 exports.isNegative=(str)->
 	return str.search(regexps.negative) isnt -1
 
 exports.isPositive=(str)->
-	return str.search(regexps.positive) isnt -1
+	return str and str.search(regexps.positive) isnt -1
 
 exports.replaceBreaks=(str)->
 	return str.replace(regexps.killBreaks,'<br />')
+
+exports.likeTitle=(str)->
+	console.log str
+	return str and str.search(regexps.title) isnt -1

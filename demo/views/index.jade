@@ -2,4 +2,8 @@ extends layout
 
 block content
   h1= title
-  p Welcome to #{title}
+  p Choose one of the demo below:
+  ul
+      each demo in demoSites
+          li.demo
+              a(href='/?url='+demo) #{demo}
