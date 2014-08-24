@@ -1,0 +1,36 @@
+{
+  "name": "node-readability",
+  "version": "0.0.1",
+  "description": "node readability",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error:no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yangsibai/node-readability"
+  },
+  "keywords": [
+    "node",
+    "readability",
+    "arc90",
+    "html",
+    "pocket",
+    "utility"
+  ],
+  "author": "yangsibai",
+  "license": "GPL3",
+  "bugs": {
+    "url": "https://github.com/yangsibai/node-readability/issues"
+  },
+  "dependencies": {
+    "cheerio": "~0.17.0",
+    "request": "~2.40.0",
+    "underscore": "^1.6.0"
+  },
+  "devDependencies": {
+    "express": "^4.8.5",
+    "mocha": "~1.21.0",
+    "should": "~3.3.0"
+  }
+}

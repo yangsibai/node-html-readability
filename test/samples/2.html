@@ -1,0 +1,1570 @@
+
+<!DOCTYPE html> 
+<html lang="en-US" class="detail-blog-post url-day-to-day-with-subversion contents"> 
+<head> 
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Fear and Loathing - Day-to-day with Subversion</title> 
+	<!-- Anti-Clickjacking script -->
+	<style id="antiClickjack">body{display:none !important;}</style>
+	<script type="text/javascript">
+		if (self === top) {
+			var antiClickjack = document.getElementById("antiClickjack");
+			antiClickjack.parentNode.removeChild(antiClickjack);
+			} else {
+			top.location = self.location;
+		}
+	</script>
+    <!--[if lt IE 9]>
+<script src="//oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js" type="text/javascript"></script>
+<![endif]-->
+<!--[if lt IE 9]>
+<script src="//oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js" type="text/javascript"></script>
+<![endif]-->
+<meta content="Orchard" name="generator" />
+<meta content="Day-to-day with Subversion" name="og:title" />
+<meta content="http://weblogs.asp.net/bsimser/day-to-day-with-subversion" name="og:url" />
+<meta content="article" name="og:type" />
+<meta content="summary" name="twitter:card" />
+<meta content=".NET,General Software Development" name="keywords" />
+<meta content="How many times have you said &amp;quot;What version is in production?&amp;quot; or &amp;quot;Can we rebuild production to fix a bug and release an update?&amp;quot;   Better yet my favourite:     &amp;quot;We&#39;re working&amp;#160;&amp;#8230;" name="description" />
+<link href="//az619453.vo.msecnd.net/content/Content/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+<link href="//az619453.vo.msecnd.net/content/Styles/styles.min.css" rel="stylesheet" type="text/css" />
+
+<link rel="alternate" type="application/rss+xml" title="Fear and Loathing" href="http://feeds.feedburner.com/bsimser" />
+
+    <link rel="stylesheet" type="text/css" href="//az619453.vo.msecnd.net/content/Styles/azure/styles.min.css" />
+<style>
+header#layout-header.group { height: 0px; }
+article.content-item p { margin-bottom: 10px; }
+</style>
+</head> 
+<body>
+
+
+
+<div class="aside-2" id="layout-wrapper">
+<div id="layout-navigation" class="group">
+    <div class="zone zone-navigation">
+<article class="widget-navigation widget-menu-widget widget">
+    
+<nav role="navigation">
+    <div class="navbar navbar-default navbar-static-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="/bsimser">Fear and Loathing</a>
+            </div>
+            <div class="collapse navbar-collapse navbar-responsive-collapse">
+                <ul class="navbar-nav nav menu menu-main-menu">
+                
+                
+<li class="first"><a href="/bsimser/">Home</a>
+</li>
+<li><a href="/bsimser/about">About</a>
+</li>
+<li class="last"><a href="http://feeds.feedburner.com/bsimser">RSS</a>
+</li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                        <li><a href="/bsimser/Users/Account/LogOn?ReturnUrl=%2Fbsimser%2Fday-to-day-with-subversion" rel="nofollow">Sign In</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+</article></div>
+</div>
+<div id="layout-main-container">
+<div id="layout-main" class="group">
+    <div id="layout-content" class="group">
+                        <div id="content" class="group">
+            <div class="zone zone-content">
+<article class="blog-post content-item">
+    <header>
+        
+
+
+
+
+<h1>Day-to-day with Subversion</h1>
+
+            <div class="metadata">
+                <time class="clearfix" datetime="2008-05-07" pubdate>Wednesday, May 7, 2008</time>
+
+
+    <a class="tag label label-default" rel="tag" href="/bsimser/Tags/.NET">.NET</a>
+    <a class="tag label label-default" rel="tag" href="/bsimser/Tags/General%20Software%20Development">General Software Development</a>
+
+            </div>
+    </header>
+    
+<p><p>How many times have you said &quot;What version is in production?&quot; or &quot;Can we rebuild production to fix a bug and release an update?&quot; </p>  <p>Better yet my favourite:</p>  <blockquote>   <p>&quot;We're working on Feature Y so we can't fix the bug for Feature X. Doing so would mean we deploy part of Feature X and Y with the patch!&quot;</p> </blockquote>  <p>These are typical problems with source control, patching, and keeping your working flowing. Often it's hard to keep track of what's being worked on vs. what was already deployed. Sometimes you end up deploying something not tested or &quot;ready for primetime&quot;. For example, at one point I was deploying screens and we had to pass along explicit instructions to the QA folks to &quot;not touch that button!&quot; because we hadn't finished the backend or our own testing. Of course, they touched it and logged a bug. Still, we often run into the problem of working on one set of features while testing another.</p>  <p>Recently we've switched over (not fully yet, but most of the projects are going there) from TFS to Subversion. TFS is just a bloody nightmare when it comes to trying to keep the trunk revision stable while performing updates on branches and not getting into a merge from hell scenario, which is sometimes typical when you have branches.</p>  <p>In doing the switch, we landed on a solution around branching code for new features and keeping the trunk clean. Branching is a hot topic in source control circles and has been known to start holy wars. In my past life (like a month ago) I avoided branches like the plague. This is probably due to the fact that branching (and more importantly the merge back) in TFS and VSS was like a live enema. Not something you want to do every day.</p>  <p>However in working through the process in a few projects and experiencing the daily merge routine first-hand, it's become my friend and makes for building systems along a feature driven development stream much easier. Here's how the process goes and all the details on each step.</p>  <p><strong>Revision 1</strong></p>  <p>Code and screenshots are always the best way to work through a process. While the code here is trivial (just a WinForms app with a few custom forms and dialogs) the principles are the same no matter how big your project is. </p>  <p>First we setup our subversion repository for the project. The typical setup is to create three folders in the repository; branches, tags, and trunk. Branches hold any branches you work on for new feature development; Tags contains named copies of revisions representing some point in time (perhaps a deployment); Trunk contains the main codebase and is always stable. These become vital to organizing your code and not clobbering other work going on as we'll see as go along.</p>  <p>Here's our sample repository in TortoiseSVN:</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_40.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_17.png" width="404" height="261" /></a> </p>  <p>We'll start with revision 1, the basic application (the proverbial WinForms &quot;Hello World!&quot;). A single application with a single form. Check this in to Subversion into the trunk path. This gives us an updated repository:</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_41.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_18.png" width="404" height="261" /></a> </p>  <p>Now your day to day work begins. The trunk revision is the most important (aka &quot;The King&quot;). Any other work being done will happen in branches and are known as servants. Servants are important but they take less priority than The King. The most important and highest priority work being done is the King (and there is only one king, viva Las Vegas baby!).</p>  <p>Fast forward to day 10 of our development cycle. We've been adding forms and code (all committed to the trunk by various people) and it's time to do a release. A release is cut (using whatever process you use here, the details are not important) and deployed. At that point we want to tag the release.</p>  <p><strong>Tag and Deploy</strong></p>  <p>Tagging is a way to identify a set of code, a snapshot, so you can retrieve it later. Once tagged, we can go back to the revision and all files from that point in time to rebuild the system. This is mainly a deployment thing. For example, you tag the release &quot;1.0&quot; and then continue on. At some point in the future you can check the code out using that tag, rebuild it, and it will be the same as the day you deployed it.</p>  <p>We'll tag our release as &quot;1.0&quot;. This creates what looks like an entire copy of the code in the &quot;tags&quot; folder, but in reality it's all virtual. Unlike &quot;other&quot; source control systems, this doesn't actually make a copy and the magic of Subversion will let us pull this tag out and all the code associated with that later. </p>  <p>To tagging and creating branches is essentially the same act (it's the same dialog box) but will differ in where you put the tag. Subversion does not have special commands for branching or tagging, but uses so-called cheap copies instead. Cheap copies are similar to hard links in Unix, which means that instead of making a complete copy in the repository, an internal link is created, pointing to a specific tree/revision. As a result branches and tags are very quick to create, and take up almost no extra space in the repository.</p>  <p>So while the dialog box says &quot;Copy&quot; you're creating this cheap copy. Don't get miffed if you're project is huge, tagging takes next to nothing. Here's our tag ready to go:</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_6.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_2.png" width="404" height="447" /></a></p>  <p>For tagging, you generally won't want to click on the &quot;Switch working copy to new branch/tag&quot; checkbox. Tags are just snapshots in time and you go along your merry way in the trunk. For branches we'll be doing something different. So after you create the tag, don't be alarmed when you see this message in TortoiseSVN:</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_8.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_3.png" width="404" height="277" /></a> </p>  <p>And here's the repository tree after the tag. Note the tags folder has a new entry, &quot;1.0&quot; which contains an exact copy of what's in the &quot;trunk&quot;, our King.</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_10.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_4.png" width="404" height="261" /></a> </p>  <p>Now comes the fun. We've tagged the work and deployed. At any point in time we can go back and redeploy this version by pulling out the &quot;1.0&quot; tag and building/deploying from there. At this point is where we branch. We want to work in a new feature set. This is going to involve new dialogs and new code.</p>  <p><strong>Branching New Features</strong>&#160;</p>  <p>Why do we branch? Isn't branching bad?</p>  <p>No. Branching, when used this way keeps your trunk clean. Remember, there can only be one King (trunk). Any other work is a servant and will eventually go into the trunk.</p>  <p>Why again do we branch? Imagine if we didn't branch. So right after you apply the &quot;1.0&quot; tag start modifying trunk. Sure, we can go back to &quot;1.0&quot; but how are we going to get any changes merged together when we're on a single line? We're also violating the &quot;One King&quot; rule. Who's the King now? Our new branch becomes a servant. The King still takes priority (for example to fix bugs) but work will continue on in the servant branch.</p>  <p>Walk with me on this, by the end you'll see what the branch is for and why we want it.</p>  <p>We'll create a new branch just like creating a tag. Call the branch &quot;1.1&quot; except in this case, we're going to switch to the branch as our working copy. Here's the branch dialog:</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_12.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_5.png" width="404" height="446" /></a> </p>  <p>And here's the repository after the branch. Our work is now all going to be committed to the &quot;svn-demo/branches/1.1&quot; branch, keeping the trunk clean.</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_14.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_6.png" width="404" height="261" /></a> </p>  <p>Work in the 1.1 branch is underway with new features being added. We've created a few new forms, modified the main form, and generally added new functionality. The 1.1 branch is quite different from the original trunk it came from now:</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_16.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_7.png" width="404" height="261" /></a> </p>  <p>A couple of scenarios will arise out of this. For example, if there's a bug found in the 1.0 version we deployed what do you do? You don't want to dirty the 1.0 tag. That's why trunk is King (and there is only one King). &quot;trunk&quot; is still the most important thing being worked on (at this point its in testing or production or whatever). Until it's verified, everyone else is a servant. Any problems found in &quot;trunk&quot; can be resolved on trunk. So we'll explore that scenario.</p>  <p><strong>Waiter, There's a Bug in my Trunk!</strong></p>  <p>There's a problem with 1.0. The window title is wrong. It reads &quot;Hello World!&quot; but it should read &quot;Hello World?&quot;. </p>  <p>Huge problem! Stop the presses. Halt the line. We need to fix this now!</p>  <p>You may be tempted to create a branch, fix it, then merge the branch back into trunk. This might be normal, but our trunk is clean so we can just work with it directly. Check out a copy of trunk to a local directory and we'll do the fix. Then commit it back. Now here's the updated repository:</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_18.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_8.png" width="404" height="261" /></a> </p>  <p>I've highlighted the file that changed in both versions. &quot;/tags/1.0&quot; is our deployed version (revision 25), &quot;/trunk&quot; is our bug fix update (revision 32). We can still, at any point, re-deploy &quot;1.0&quot; without any problems.</p>  <p>We'll do a deploy of our new trunk (which we'll call &quot;1.0.1&quot;) and a series of exhaustive and intensive tests beings. Weeks pass testing our massive change and finally QA accepts the version and allows it be deployed to production. This will replace &quot;1.0&quot; in production with &quot;1.0.1&quot; and the updated title bar. Tag trunk as &quot;1.0.1&quot; like we did &quot;1.0&quot; above and we'll now have this in our repository:</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_23.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_10.png" width="404" height="261" /></a> </p>  <p><strong>The Graph is your Friend</strong></p>  <p>TortoiseSVN has a wonderful feature called &quot;Revision Graph&quot; which gives you a visual tree of your branches and tags and revisions. You will live and die by this tool. Here's ours so far:</p>  <p><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_21.png" width="400" height="453" /> </p>  <p>From this visual we can assess:</p>  <ul>   <li>A tag called &quot;1.0&quot; was created from the trunk at revision 28, creating revision 29</li>    <li>A branch called &quot;1.1&quot; was created from the trunk at revision 29</li>    <li>Work continues on the &quot;1.1&quot; branch with daily commits (so far at revision 31)</li>    <li>A tag called &quot;1.0.1&quot; was created from the trunk (after a bug fix) at revision 32, creating revision 33</li> </ul>  <p>At this point I want to point out some major advantages with this approach:</p>  <ul>   <li>You can rebuild any deployed release easily (well, as long as you tagged it in the first place)</li>    <li>Fixes can be done to the trunk and deployed quickly</li>    <li>Work can continue on separate features without disturbing the main work</li> </ul>  <p><strong>Day to Day Merges</strong></p>  <p>So now we have a bit of a disconnect don't we? The trunk (revision 32) and the re-deployed tagged version (1.0.1, revision 33) contains the fix we need however we're working on Feature X in the 1.1 branch. We don't have that fix. If we were to merge our code back to the trunk (which we will have to do at some point) we might miss this fix, or worse yet clobber it.</p>  <p>To avoid this problem, anyone working in a branch follows one simple rule. Each day (say at the start of the day) you update your branch from the trunk. In other words, you pick up any changes that have been applied to the trunk into your little branched world. Doing this will avoid any merge issues when you commit your branch back to the trunk.</p>  <p>We do this with a merge. It's a simple merge but one that has to happen, and merges can get complicated and ugly. In your working directory where you're commits are happening on the branch, you won't see changes to trunk.</p>  <p>Here's the merge dialog that we perform on a daily basis. We'll merge changes from the trunk into the 1.1 branch:</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_28.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_12.png" width="404" height="327" /></a> </p>  <p>A few notes about this merge:</p>  <ul>   <li>We merge from the branch and specify the branch in the top section. This seems backwards but we're merging &quot;from a point in time&quot; which needs to be the last revision when the two trees (trunk and branch) were synchronized. Remember, we're looking for all the changes &quot;from trunk to branch&quot; since we branched. The revision graph is essential in determining this. In our case, this is our first sync and is when we created the branch (revision 30).</li>    <li>By default the merge to uses the &quot;From&quot; value but we want to merge into our branch so uncheck this and pick the trunk in the &quot;To&quot; section. For the trunk we're going to pick the HEAD revision but this happens to be revision 32. Picking either HEAD or revision 32 here results in the same merge.</li>    <li>Confirm the location and behaviour you expect in the bottom section. The working copy should be your current working folder, and it should end up pointing at your current branch</li>    <li>Always (always) do a Dry run first and confirm the updates your going to do are correct.</li> </ul>  <p>So in this merge we expect to get the changes to MainForm.Designer.cs (that title change bug). If we had selected the HEAD revision for our branch version rather than the time where the branch split off from trunk, we would be comparing all the changes. This would result in the dry run telling us we have new forms. This is incorrect because a) we only want the changes from trunk and b) trunk doesn't know (or need to know) about any new forms we created. We're only interested in the changes made on trunk that we don't have yet.</p>  <p>Here's the dry run dialog with the proper response (based on the last merge dialog):</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_30.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_13.png" width="404" height="277" /></a> </p>  <p>Perfect! We just want the changes to MainForm.Designer.cs (or whatever files changed since we last sync' d) and we got them. Execute this to get the new changes from trunk into your branch.</p>  <p>When you do a merge, you're merging those changes into your working copy but you're still one more step away. This will modify your working code but now you have to commit it back to the repository. If you check your updates you'll see that the MainForm.Designer.cs file has changed. Here's the unified diff of the changes:</p>  <blockquote>   <p><font size="2" face="times">Index: D:/Development/spikes/SvnMergeDemo/WindowsApplication1/MainForm.Designer.cs       <br />===================================================================        <br />--- D:/Development/spikes/SvnMergeDemo/WindowsApplication1/MainForm.Designer.cs&#160;&#160;&#160; (revision 31)        <br />+++ D:/Development/spikes/SvnMergeDemo/WindowsApplication1/MainForm.Designer.cs&#160;&#160;&#160; (working copy)        <br />@@ -61,7 +61,7 @@        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.Controls.Add(this.button1);        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.Name = &quot;MainForm&quot;;        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;        <br />-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.Text = &quot;Hello World!&quot;;        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.Text = &quot;Hello World?&quot;;        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.Load += new System.EventHandler(this.MainForm_Load);        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.ResumeLayout(false);</font></p> </blockquote>  <p>As you can see, the title bar change is here and replaces our old (buggy) version.</p>  <p>Commit this to the repository. Your branch now has the changes from trunk and you can continue on with your new feature work.</p>  <p>Remember, the key point of working in the branch is we don't pollute the trunk with our new dialogs or code, yet doing this daily merge (which will take all of 5 minutes on any codebase, trust me ;) keeps your branch up to date with any changes that may have happened.</p>  <p><strong>Getting back to trunk</strong></p>  <p>As we continue with our day to day work in the 1.1 branch, more changes might happen with trunk. More bug fixes, etc. However we don't introduce new features. We only add things on our branch. In the rare instance we're building a new feature while another feature is in play, we might create another branch with another team. I would however keep the number of active branches going on to a minimum. It'll just get ugly later in life.</p>  <p>In any case, we continue with our branch until we're ready to deploy. At this point we probably have a stable trunk (we should always have a stable trunk) with a number of tags. All changes in the trunk are in our branch and the team has decided it's time to deploy a new version to replace 1.0.1. This is our 1.1 branch and we need to merge all the new stuff in 1.1 back into trunk. </p>  <p>Here's our repository as it stands:</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_32.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_14.png" width="404" height="261" /></a> </p>  <ul>   <li>The 1.1 branch contains all of our new work, 3 additional forms and some changes to the main form to invoke our new forms</li>    <li>As a result of our daily &quot;merge from trunk&quot; routine, we have any bug fixes or changes that were done in trunk</li>    <li>Our trunk is clean and the version that was deployed (with various tags in our tags folder)</li> </ul>  <p>To merge back into the trunk it's the opposite of what we do on a daily basis. Rather than merging into the branch, we reverse it and merge into trunk. Also, you'll need a working copy of trunk to merge into. Check out trunk into a folder and invoke the merge. Again, the key point here is to pick the right revision. For the branch it'll be the HEAD revision. For trunk, it's the last point of synchronization which in this case is revision 32. Here's the merge dialog to commit our 1.1. features to the trunk.</p>  <p><a href="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_34.png"><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_thumb_15.png" width="404" height="327" /></a> </p>  <p>In this case, we're committing to a working folder with a copy of trunk checked out to it. Click on Diff to see what changes are going to be applied:</p>  <p><img style="border-right: 0px; border-top: 0px; border-left: 0px; border-bottom: 0px" border="0" alt="image" src="https://mscblogs.blob.core.windows.net/media/bsimser/WindowsLiveWriter/SubversionDaytoday_12266/image_37.png" width="393" height="390" /> </p>  <p>Here we've added our new forms and there's changes to the MainForm.cs and MainForm.Designer.cs (we've added buttons to invoke the new dialogs). Here's the unified diff of MainForm.Designer.cs (with some lines removed for brevity):</p>  <blockquote>   <p><font size="2" face="times">Index: MainForm.Designer.cs       <br />===================================================================        <br />--- MainForm.Designer.cs&#160;&#160;&#160; (.../trunk)&#160;&#160;&#160; (revision 35)        <br />+++ MainForm.Designer.cs&#160;&#160;&#160; (.../branches/1.1)&#160;&#160;&#160; (revision 35)        <br />@@ -28,13 +28,49 @@        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; /// &lt;/summary&gt;        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; private void InitializeComponent()        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; {        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.button1 = new System.Windows.Forms.Button();        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.button2 = new System.Windows.Forms.Button();        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.button3 = new System.Windows.Forms.Button();        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.SuspendLayout();        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; //         <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; // button1        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; //         <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.button1.Location = new System.Drawing.Point(12, 12);        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.button1.Text = &quot;Search&quot;;        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; //         <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; // button2        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; //         <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.button2.Location = new System.Drawing.Point(12, 41);        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.button2.Text = &quot;Admin&quot;;        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; //         <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; // button3        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; //         <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.button3.Location = new System.Drawing.Point(12, 70);        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.button3.Text = &quot;Customers&quot;;        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; //         <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; // MainForm        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; //         <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.Controls.Add(this.button3);        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.Controls.Add(this.button2);        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.Controls.Add(this.button1);        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.Name = &quot;MainForm&quot;;        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; this.Text = &quot;Hello World?&quot;;        <br />@@ -44,6 +80,10 @@        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; }        <br />&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; #endregion        <br />+        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160; private System.Windows.Forms.Button button1;        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160; private System.Windows.Forms.Button button2;        <br />+&#160;&#160;&#160;&#160;&#160;&#160;&#160; private System.Windows.Forms.Button button3;        <br />&#160;&#160;&#160;&#160; }        <br /> }</font></p> </blockquote>  <p>Note towards the bottom of this diff, this.Text = &quot;Hello World?&quot;. This was the result of our daily merge so there's nothing to be applied back to trunk. We're in sync here. Only the changes/additions/deletions are applied which will bring &quot;trunk&quot; up to par with the 1.1 branch work. Again, do your dry run. You should see only the new work done in the branch as being applied to trunk. If not; stop, drop, and roll and recheck your revisions.</p>  <p>Again, the trunk now is merged together with the 1.1 branch. At this point you'll want to load the solution up, build it, run unit tests, etc. and do a sanity check that everything works as expected. You would probably do your deployment and tag the new trunk as &quot;1.1&quot;. </p>  <p>You can just simply ditch the branch folder or leave it there in the repository. After all, it's just a symbolic link and doesn't take up much space (we have a new tag created in our repository on every CruiseControl.NET build so there are hundreds of tags, no big deal).</p>  <p><strong>Lather, Rinse, Repeat</strong></p>  <p>Now you're back on the trunk. Trunk is King, there is only one King, and your day to day work continues with whatever feature you're working on. You have the option to &quot;always live in the branch&quot; which might be an idea but this requires that daily merge from trunk and could cause problems. There's no problem &quot;running on trunk&quot; and building from it. The point at which you branch should be when you do a release and want to continue on with new (different) work, otherwise daily commits to trunk by the entire team is fine.</p>  <p>When a new feature comes along, branch, move part of the team (or the entire team) to that branch and keep trunk clean, doing any bug fixes as they come up. Then merge back from the feature branch back into trunk at the appropriate time. Keep doing this as often as necessary, until you run out of money or the team quits. Sit back, relax, and enjoy the simplicity of life.</p>  <p><strong>Conclusion</strong></p>  <p>It may seem complicated but it's really pretty basic when you boil it down. Just follow a few simple rules:</p>  <ul>   <li>On a daily basis, developers in branches merge changes from the trunk into their branch</li>    <li>Merge branch features back into trunk when you're ready to deploy</li>    <li>Bug fixes are performed on the trunk then tagged and re-deployed</li> </ul>  <p>Give it a shot, email me if you're stuck or lost, or let me know what your experiences are.</p>  <p>Enjoy!</p></p>
+
+</article></div>
+        </div>
+                <div id="after-content">
+            <div class="zone zone-after-content">
+
+<h2 class="comment-count">40 Comments</h2>
+<ul class="comments"><li class="first ">
+
+
+<blockquote class="comment comment-1506">
+
+    
+
+<p class="text">
+Phew, nice job. I understand the basic mechanics, but this takes it a lot further than I ever did, and makes it understandable! <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://blog.donnael.com/" rel="nofollow">Garrett Fitzgerald</a></strong></span>
+        - <span class="when"><time datetime="2008-05-07T05:55:57.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1506">Tuesday, May 6, 2008 11:55:57 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1507">
+
+    
+
+<p class="text">
+Hi Bill, <br />
+ <br />
+Great article !! one thing to add is the notation of VSTS style shelfs, this is easily done in SVN using the following - http://wiki.littlebluefroglabs.com/index.php?title=Subversion_and_Shelving. <br />
+ <br />
+I suppose one thing that is also worth adding is what is SVN and why use SVN for those that have not seen it before. <br />
+ <br />
+Andy <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>Andy Stopford</strong></span>
+        - <span class="when"><time datetime="2008-05-07T06:52:53.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1507">Wednesday, May 7, 2008 12:52:53 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1508">
+
+    
+
+<p class="text">
+That&#39;s really good stuff.  <br />
+I used it for my own day to day development and now the company where I work uses it :) <br />
+ <br />
+Now we do not chase each other for updated or missing files because of that. <br />
+ <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>ferrymeidianto</strong></span>
+        - <span class="when"><time datetime="2008-05-07T07:18:15.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1508">Wednesday, May 7, 2008 1:18:15 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1509">
+
+    
+
+<p class="text">
+Good content but a little confusing. <br />
+You do cite alternative models for branching but you might want to make it a little bit more explicit. <br />
+ <br />
+For example, here are two models I&#39;m familiar with: <br />
+ <br />
+A. Release Branches <br />
+- New work goes in trunk <br />
+- Create a branch when freezing a release candidate <br />
+- Perform maintenance work on the frozen release branches (and copy back to trunk) <br />
+- Release issued from branch <br />
+- Continue new work in trunk <br />
+ <br />
+B. Work branches <br />
+- Trunk is kept clean and release-worthy at all times <br />
+- New features developed in branches <br />
+- Branches merged into trunk when features are ready <br />
+- Release issued from trunk <br />
+ <br />
+We use option A which works quite well and there&#39;s never any confusion about where new work should go since it always goes in trunk.  Only maintenance work on pending releases go in other branches. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://blog.bits-in-motion.com/" rel="nofollow">Jeff Brown</a></strong></span>
+        - <span class="when"><time datetime="2008-05-07T07:20:14.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1509">Wednesday, May 7, 2008 1:20:14 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1510">
+
+    
+
+<p class="text">
+Truly a great post. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://www.contract5.com/BusinessSolutions/Pages/DavidEvans.aspx" rel="nofollow">David Evans</a></strong></span>
+        - <span class="when"><time datetime="2008-05-07T08:12:28.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1510">Wednesday, May 7, 2008 2:12:28 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1511">
+
+    
+
+<p class="text">
++1 for release branches, not feature branches. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>Codex</strong></span>
+        - <span class="when"><time datetime="2008-05-07T10:58:07.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1511">Wednesday, May 7, 2008 4:58:07 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1513">
+
+    
+
+<p class="text">
+Awesome post on how to use SVN. This is definitely a favorites page for SVN noobs like myself. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://blog.reamped.net/" rel="nofollow">Ira</a></strong></span>
+        - <span class="when"><time datetime="2008-05-07T13:13:32.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1513">Wednesday, May 7, 2008 7:13:32 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1514">
+
+    
+
+<p class="text">
+I&#39;ve found it hard to have people let go of their financial investment in TFS... <br />
+ <br />
+Also the perception of a tool that costs money vs. a free tool.  The costly one _must_ be better! <br />
+ <br />
+Good writeup though, I&#39;ve forwarded it to my team (small jabs, ya know) <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://www.flux88.com" rel="nofollow">subdigital</a></strong></span>
+        - <span class="when"><time datetime="2008-05-07T13:51:46.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1514">Wednesday, May 7, 2008 7:51:46 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1515">
+
+    
+
+<p class="text">
+Thanks Bill. Great article. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>Alper</strong></span>
+        - <span class="when"><time datetime="2008-05-07T14:08:01.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1515">Wednesday, May 7, 2008 8:08:01 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1516">
+
+    
+
+<p class="text">
++1 for release branches... <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://codeclimber.net.nz" rel="nofollow">Simone</a></strong></span>
+        - <span class="when"><time datetime="2008-05-07T15:29:30.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1516">Wednesday, May 7, 2008 9:29:30 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1517">
+
+    
+
+<p class="text">
++1 for release branches... <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>Shoaib</strong></span>
+        - <span class="when"><time datetime="2008-05-07T16:27:27.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1517">Wednesday, May 7, 2008 10:27:27 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1518">
+
+    
+
+<p class="text">
+Great post. Much thanks. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://www.ovalsquare.com" rel="nofollow">Ted Jardine</a></strong></span>
+        - <span class="when"><time datetime="2008-05-07T18:15:28.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1518">Wednesday, May 7, 2008 12:15:28 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1519">
+
+    
+
+<p class="text">
+Great writeup - well done in explaining the &quot;day-to-day&quot; working with Subversion. <br />
+ <br />
+I&#39;ve been using SVN for a year now for one of my projects, only doing work in trunk.  Have recently created a branch for adding in some unit tests (a more recent adventure).  Have also made changes to the trunk in that time, so will need to merge trunk to the branch.  Now I have a good idea of how that will be done! <br />
+ <br />
+And I like the discussion over branching models, and I agree that release branches sound like the better way to go.  I will try to do that in the future.  I think my current unit tests branch is more of a feature branch! <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://grantpalin.com" rel="nofollow">Grant Palin</a></strong></span>
+        - <span class="when"><time datetime="2008-05-07T18:16:56.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1519">Wednesday, May 7, 2008 12:16:56 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1520">
+
+    
+
+<p class="text">
+Thanks for perfect article!!! <br />
+ <br />
+p.s. I think you should swap merge screenshots :) <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>andrex</strong></span>
+        - <span class="when"><time datetime="2008-05-07T20:55:37.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1520">Wednesday, May 7, 2008 2:55:37 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1521">
+
+    
+
+<p class="text">
+That clarified and highlighted some ways of working with version control that I hadn&#39;t properly considered before. <br />
+ <br />
+-dave <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://davidgardiner.blogspot.com" rel="nofollow">David Gardiner</a></strong></span>
+        - <span class="when"><time datetime="2008-05-07T23:40:33.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1521">Wednesday, May 7, 2008 5:40:33 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1522">
+
+    
+
+<p class="text">
+Release branches are the way to go and are far less work for the developer to maintain than feature branches.  I only recommend feature branches if the project is extremely large and is in danger of becoming broken (or has had a history of being broken) by someone&#39;s trunk updates.  Also, you can start with release branches and switch to feature branches later on in the project&#39;s lifecycle if the project size warrants it and it becomes a problem for your team.  <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>John</strong></span>
+        - <span class="when"><time datetime="2008-05-08T00:42:11.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1522">Wednesday, May 7, 2008 6:42:11 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1523">
+
+    
+
+<p class="text">
+Bill, <br />
+ <br />
+What happens if you deleted/renamed a file in the branch in a refactoring cycle?  How can we merge any changes done to that file in the trunk? <br />
+ <br />
+Similarly, let us say you modified the namespace names that are referenced (via using statements) in a source file in trunk.  Now you are trying to merge some other changes in the same file from trunk. When you run the merge operation, SVN overrides the using statements with old ones.  It would take more than 5 minutes to fix all these breaking changes. <br />
+ <br />
+I am interested to know whether you have any tips in addressing these issues. <br />
+ <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>Kiran</strong></span>
+        - <span class="when"><time datetime="2008-05-08T01:56:20.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1523">Wednesday, May 7, 2008 7:56:20 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1524">
+
+    
+
+<p class="text">
+Very nice article on branching.  Doesn&#39;t matter if you are using Subversion or not, the concepts are the same (and just as powerful in other tools as well, just not TFS). <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://www.VistaDB.Net" rel="nofollow">Jason Short</a></strong></span>
+        - <span class="when"><time datetime="2008-05-08T02:36:54.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1524">Wednesday, May 7, 2008 8:36:54 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1525">
+
+    
+
+<p class="text">
+@Kiran: You&#39;ll pick up the deletion (or any other changes) in your daily merge from trunk. No problems there. If you&#39;re doing a *big* refactoring (like a domain shift or a massive namechange) you might want to co-ordinate with the team. Tell them the intent and talk about it (most times something like this is needed and with a good refactoring tool and unit tests you shouldn&#39;t worry). Get them all to merge up then do the change and get them to re-merge from the trunk. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://weblogs.asp.net/bsimser" rel="nofollow">Bil Simser</a></strong></span>
+        - <span class="when"><time datetime="2008-05-08T13:48:52.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1525">Thursday, May 8, 2008 7:48:52 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1526">
+
+    
+
+<p class="text">
+@Cory: Moving from SVN to TFS is IMHO bad. I won&#39;t get into a holy war here about the best source control (as I don&#39;t feel is SVN is the &quot;best&quot; but think it&#39;s &quot;better&quot; than TFS). WIth TFS I have this crazy workspace/local drive mapping issue which has caused me pain and suffering. With SVN I just move a directory somewhere. It doesn&#39;t care. TFS requires me to tell the server to map my local drive to some location it knows about. And when a person leaves the company the workspace lingers and is a PITA to get rid of. Enough on that (for now). <br />
+ <br />
+As for SVN and CC.NET, not sure if that&#39;s worthy of an entire blog post. It&#39;s just a task in your ccnet.config file and is supported OOTB. How to track bugs and issues might be interesting and maybe I&#39;ll look at a post on Developer-&gt;Bug Tool-&gt;SVN-&gt;CC.NET or something like that. <br />
+ <br />
+Thanks. <br />
+ <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://weblogs.asp.net/bsimser" rel="nofollow">Bil Simser</a></strong></span>
+        - <span class="when"><time datetime="2008-05-08T13:53:33.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1526">Thursday, May 8, 2008 7:53:33 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1527">
+
+    
+
+<p class="text">
+Thank you very much for this great article that explains feature branching very clearly! And together with the comments you get a really good picture of the two most common branching strategies. One of the best SVN tutorials I&#39;ve read so far. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://www.potschka-it.de" rel="nofollow">Florian Potschka</a></strong></span>
+        - <span class="when"><time datetime="2008-05-08T18:50:57.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1527">Thursday, May 8, 2008 12:50:57 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1528">
+
+    
+
+<p class="text">
+Hello. <br />
+ <br />
+Nice work Bil. <br />
+ <br />
+I have one question that keeps bothering me with this approach.  <br />
+ <br />
+for instance, suppose we&#39;ve release v1.0 and we&#39;ve also release v2.0, which has lots of new features. This means you&#39;ll have something like this: <br />
+ <br />
+- tags <br />
+  - v1.0 <br />
+  - v2.0 <br />
+- trunk <br />
+  - v2.0 files <br />
+- branches <br />
+ - v2.0 branch code <br />
+ <br />
+the trunk is the king and we&#39;ve already updated it to 2.0 and have already put it on the web. So, now the latest version is 2.0 but the client has to pay to update to it or else he must keep using 1.0. <br />
+ <br />
+the problem: how do we solve a 1.0 error that is found after publishing the 2.0 version? Well, with the model you&#39;re using and when there was only a 1.0 version, solving it would be easy: just correct the trunk and publish it to a new tag (like you&#39;ve shown on your post).  <br />
+ <br />
+but now that the trunk has been updated to 2.0, how do you solve this problem withouth changing the existing 1.0 snapshop that exists on the tags folder? <br />
+ <br />
+thanks. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://msmvps.com/blogs/luisabreu" rel="nofollow">Luis Abreu</a></strong></span>
+        - <span class="when"><time datetime="2008-05-28T14:13:28.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1528">Wednesday, May 28, 2008 8:13:28 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1529">
+
+    
+
+<p class="text">
+Luis: <br />
+ <br />
+My boss and I had a discussion about this, and we concluded that the crux of the matter is this: <br />
+By choosing to support two separate major versions (whether for backwards compatibility, stingy customers, or dire security holes), you are ultimately maintaining two distinct products with code bases that may well be wildly divergent. This is likely to be an issue no matter what method you use. <br />
+ <br />
+So you can either maintain a separate branch for version 1.0 just for bug fixes (i.e., without any feature branches of its own -- those are reserved for 2.0) or create a separate trunk for what is essentially a separate project. It runs slightly counter to the original intent, but it&#39;s more or less necessary in any case. The end result may require you to fix the same bugs twice, but that&#39;s basically what you sign up for when offering fixes for older versions. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://www.wcwedin.com" rel="nofollow">William Wedin</a></strong></span>
+        - <span class="when"><time datetime="2008-06-17T13:56:11.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1529">Tuesday, June 17, 2008 7:56:11 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1530">
+
+    
+
+<p class="text">
+Great article! Our team is fairly new to SVN and this goes a long way in explaining the &quot;how-to&quot; of branching and merging. The inclusion of screenshots was essential in that understanding. Thank you Bill!  <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>Shirley</strong></span>
+        - <span class="when"><time datetime="2010-05-28T15:49:42.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1530">Friday, May 28, 2010 9:49:42 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1531">
+
+    
+
+<p class="text">
+This is great, it establishes perfectly why this is so confusing, why it will stay confused, and just how deeply broken TortoiseSVN&#39;s UI is. &quot;We&#39;ll merge changes from the trunk into the 1.1 branch&quot;... by specify the BRANCH in the FROM field, and the TRUNK in the TO field. <br />
+ <br />
+It&#39;s astounding, but there it is. No way to write a clear explanation of something that is obfuscated by design. <br />
+ <br />
+I hope they don&#39;t use TortoiseSVN in the space program. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://fortboise.org/blog/" rel="nofollow">fortboise</a></strong></span>
+        - <span class="when"><time datetime="2010-08-30T19:16:44.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1531">Monday, August 30, 2010 1:16:44 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1532">
+
+    
+
+<p class="text">
+Been having some trouble with this stuff, sought help, and read through your account very carefully, tried to put it into practice. I&#39;m good with the branching, and the day-to-day merge works as expected, with the important insight that it&#39;s FROM the branch revision that was in common with the trunk. <br />
+ <br />
+But I&#39;ve been unable to get TortoiseSVN to bring the branch changes back to the trunk. My test project has one change in one file in the trunk, and one change to another file in the branch. The trunk&#39;s change has been day-to-day merged to the branch, so the reintegration should comprise ONE change to ONE file in the trunk. <br />
+ <br />
+But the TEST merge (on the clean working copy of the trunk, FROM its HEAD, TO the HEAD of the branch) shows TWO changes coming, one to each file: <br />
+  Updated Default.aspx.cs <br />
+  Updated Default.aspx <br />
+ <br />
+But that&#39;s not the bad part. The bad part is that having it perform the merge after the test shows that, it does SOMETHING DIFFERENT: <br />
+ <br />
+	Merging <br />
+		Updated Default.aspx.cs <br />
+		Updated Default.aspx <br />
+	Merging r641 through r644 <br />
+		Updated Default.aspx.cs <br />
+	Reverse merging 644 through 641 <br />
+		Updated Default.aspx.cs <br />
+ <br />
+It does bring in the branch&#39;s change to Default.aspx, but there are FOUR entries on a file it should not be touching, and looking at the resulting file, I see that it has reverted to a version that is earlier than what&#39;s in EITHER the trunk or the branch in the repository. <br />
+ <br />
+Some things are profoundly broken here, and &quot;it&#39;s not just me.&quot; <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://fortboise.org/blog/" rel="nofollow">Tom von Alten</a></strong></span>
+        - <span class="when"><time datetime="2010-08-31T15:19:47.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1532">Tuesday, August 31, 2010 9:19:47 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1533">
+
+    
+
+<p class="text">
+Hey thanks for posting. From all my internet researches on the subject of TortoiseSVN / Subversion, this is the only one that makes any sense for me. This has saved me a LOT of brain damage. Great stuff. <br />
+ <br />
+Cheers <br />
+ <br />
+Andy <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://andyuk2010.blogspot.com" rel="nofollow">Andy</a></strong></span>
+        - <span class="when"><time datetime="2010-09-29T14:13:37.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1533">Wednesday, September 29, 2010 8:13:37 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1534">
+
+    
+
+<p class="text">
+great article, wish images were more clear. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://tarunksblog.blogspot.com/" rel="nofollow">Tarun</a></strong></span>
+        - <span class="when"><time datetime="2010-11-13T12:23:15.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1534">Saturday, November 13, 2010 5:23:15 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1535">
+
+    
+
+<p class="text">
+Thanks for an excellent article! We&#39;re doing some initial R &amp; D on switching from VSS over to SVN, and this article really helped me understand the process of using SVN &amp; Tortoise on a daily basis. Thanks again! <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://www.twitter.com/nfdotcom" rel="nofollow">Adam Belebczuk</a></strong></span>
+        - <span class="when"><time datetime="2011-01-04T17:40:57.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1535">Tuesday, January 4, 2011 10:40:57 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1536">
+
+    
+
+<p class="text">
+Nice post! <br />
+This article clarified the most part of my questions. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>Fred Wuerges</strong></span>
+        - <span class="when"><time datetime="2011-02-24T14:42:03.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1536">Thursday, February 24, 2011 7:42:03 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1537">
+
+    
+
+<p class="text">
+It does bring in the branch&#39;s change to Default.aspx, but there are FOUR entries on a file it should not be touching, and looking at the resulting file, I see that it has reverted to a version that is earlier than what&#39;s in EITHER the trunk or the branch in the repository. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://www.machscooters.com/electric-scooters.html" rel="nofollow">Electric Scooters</a></strong></span>
+        - <span class="when"><time datetime="2011-06-04T18:23:59.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1537">Saturday, June 4, 2011 12:23:59 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1538">
+
+    
+
+<p class="text">
+Hi, <br />
+ <br />
+I&#39;m new to Subversion. I found your post very helpful, but there&#39;s one thing that actually confused me when I was reading along. When you say &quot;We&#39;ll merge changes from the trunk into the 1.1 branch:&quot; the image right below it shows something different from what you&#39;re saying. It shows you&#39;re merging from the branch 1.1 to the trunk, wasn&#39;t it supposed to be done the other way around? Maybe I&#39;m wrong, but that made me think whether it&#39;s a typo or you uploaded the wrong image. <br />
+ <br />
+Anyways thank you for posting such info. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>Mark</strong></span>
+        - <span class="when"><time datetime="2011-12-14T21:29:56.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1538">Wednesday, December 14, 2011 2:29:56 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1539">
+
+    
+
+<p class="text">
+Ohh,  <br />
+ <br />
+I guess my question was already answered in the explanation you gave in the section &#171;A few notes about this merge&#187;. I&#39;m sorry, but maybe I had to continue reading to the end before asking something, which was explained further down. <br />
+ <br />
+Great post! <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>Mark</strong></span>
+        - <span class="when"><time datetime="2011-12-15T19:07:28.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1539">Thursday, December 15, 2011 12:07:28 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1540">
+
+    
+
+<p class="text">
+Thank you so much, now I&#39;m understand what is &quot;stable trunk&quot;. <br />
+If I may suggest, please update on how to compile into download ready file (.zip) please. <br />
+And I can&#39;t find the donation button, where it is? <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>Amir</strong></span>
+        - <span class="when"><time datetime="2012-01-16T15:01:57.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1540">Monday, January 16, 2012 8:01:57 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1541">
+
+    
+
+<p class="text">
+Unexceptional branching is just a sign of poor planning of forthcoming features and lack of quality. <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>Arvind</strong></span>
+        - <span class="when"><time datetime="2012-04-17T16:57:34.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1541">Tuesday, April 17, 2012 10:57:34 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1542">
+
+    
+
+<p class="text">
+Awesome article. &amp;nbsp;I don&#39;t care how old it is - still relevant. &amp;nbsp;Subversion is easy to setup (VisualSVN + TourtiseSVN) and is a Godsend when I discover clients still using VSS &amp;quot;because they don&#39;t have the money to move to TFS&amp;quot;. This article saved me tons of time and hair. <br />
+ <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong><a href="http://www.applied-health.com" rel="nofollow">Mike</a></strong></span>
+        - <span class="when"><time datetime="2012-06-21T05:28:45.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1542">Wednesday, June 20, 2012 11:28:45 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1543">
+
+    
+
+<p class="text">
+Thanks so &amp;nbsp;much for such a crisp explanation. Clarifies all remaining questions about subversion. <br />
+ <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>IyerB</strong></span>
+        - <span class="when"><time datetime="2012-07-25T21:59:02.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1543">Wednesday, July 25, 2012 3:59:02 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1544">
+
+    
+
+<p class="text">
+Hmm. <br />
+ <br />
+Obfuscated a fairly simple topic, it seems to me, with gibberish such as: <br />
+ <br />
+&amp;quot;Why again do we branch? Imagine if we didn&#39;t branch. So right after you apply the &amp;quot;1.0&amp;quot; tag start modifying trunk. Sure, we can go back to &amp;quot;1.0&amp;quot; but how are we going to get any changes merged together when we&#39;re on a single line? We&#39;re also violating the &amp;quot;One King&amp;quot; rule. Who&#39;s the King now? Our new branch becomes a servant. The King still takes priority (for example to fix bugs) but work will continue on in the servant branch.&amp;quot; <br />
+ <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>Ed Austin</strong></span>
+        - <span class="when"><time datetime="2012-08-07T05:11:01.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1544">Monday, August 6, 2012 11:11:01 PM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="">
+
+
+<blockquote class="comment comment-1545">
+
+    
+
+<p class="text">
+Wow! This is a very good article in 2008. But still it is applicable very much. Thank you very much for sharing.  <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>Ponam</strong></span>
+        - <span class="when"><time datetime="2012-09-05T09:14:29.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1545">Wednesday, September 5, 2012 3:14:29 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+<li class="last ">
+
+
+<blockquote class="comment comment-1546">
+
+    
+
+<p class="text">
+This is just what I was looking for! <br />
+ <br />
+Been using subversion for about an year and never created a branch, mainly because we have been stabilizing and finishing our first &quot;true&quot; stable release. <br />
+ <br />
+Since we are almost releasing it, I was thinking to apply something like this strategy, but was having trouble visualize it, and this article really helped. <br />
+ <br />
+thanks! <br />
+
+</p>
+
+
+    <footer>
+        <span class="who"><strong>jfm</strong></span>
+        - <span class="when"><time datetime="2012-11-10T16:13:28.0000000Z"><a class="alert-link" href="/bsimser/day-to-day-with-subversion#comment-1546">Saturday, November 10, 2012 9:13:28 AM</a></time></span>
+    </footer>
+
+    
+</blockquote>
+
+
+</li>
+</ul>
+
+
+
+
+
+
+
+    <div id="comments">
+        <p class="comment-disabled alert alert-warning">Comments have been disabled for this content.</p>
+    </div>
+</div>
+        </div>
+    </div>
+    <aside id="aside-second" class="aside-second">
+        <div class="zone zone-aside-second">
+<article class="widget-aside-second widget-html-widget widget">
+    
+<p><img width="200" height="200" style="display: block; margin-left: auto; margin-right: auto; margin-top: 30px;" alt="" src="https://mscblogs.blob.core.windows.net/media/bsimser/Media/monsterbil.png" /></p>
+</article>
+<article class="widget-aside-second widget-tag-cloud widget">
+    
+
+<ul class="tag-cloud">
+        <li class="tag-cloud-tag tag-cloud-tag-2">
+
+
+            <a dataScale="0.25" href="/bsimser/Tags/.NET" style="font-size:1.2em; font-weight:500">.NET</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-2">
+
+
+            <a dataScale="0.25" href="/bsimser/Tags/Agile" style="font-size:1.2em; font-weight:500">Agile</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Android" style="font-size:1em; font-weight:400">Android</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Apache" style="font-size:1em; font-weight:400">Apache</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/ASP.NET" style="font-size:1em; font-weight:400">ASP.NET</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Autofac" style="font-size:1em; font-weight:400">Autofac</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Blog" style="font-size:1em; font-weight:400">Blog</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Books" style="font-size:1em; font-weight:400">Books</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/C%23" style="font-size:1em; font-weight:400">C#</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/CAB" style="font-size:1em; font-weight:400">CAB</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/CodePlex" style="font-size:1em; font-weight:400">CodePlex</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-3">
+
+
+            <a dataScale="0.5" href="/bsimser/Tags/Community%20News" style="font-size:1.5em; font-weight:600">Community News</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Cool%20Tools" style="font-size:1em; font-weight:400">Cool Tools</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/CSS" style="font-size:1em; font-weight:400">CSS</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Design" style="font-size:1em; font-weight:400">Design</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Design%20Patterns" style="font-size:1em; font-weight:400">Design Patterns</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Film%20Making" style="font-size:1em; font-weight:400">Film Making</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Game%20Development" style="font-size:1em; font-weight:400">Game Development</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-3">
+
+
+            <a dataScale="0.5" href="/bsimser/Tags/General%20Software%20Development" style="font-size:1.5em; font-weight:600">General Software Development</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/GitHub" style="font-size:1em; font-weight:400">GitHub</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/iOS" style="font-size:1em; font-weight:400">iOS</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/JavaScript" style="font-size:1em; font-weight:400">JavaScript</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/jQuery" style="font-size:1em; font-weight:400">jQuery</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/LINQ" style="font-size:1em; font-weight:400">LINQ</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Metro" style="font-size:1em; font-weight:400">Metro</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Mobile" style="font-size:1em; font-weight:400">Mobile</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/MVC" style="font-size:1em; font-weight:400">MVC</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/MySQL" style="font-size:1em; font-weight:400">MySQL</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/NHibernate" style="font-size:1em; font-weight:400">NHibernate</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Nu" style="font-size:1em; font-weight:400">Nu</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/NuGet" style="font-size:1em; font-weight:400">NuGet</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-3">
+
+
+            <a dataScale="0.5" href="/bsimser/Tags/Other" style="font-size:1.5em; font-weight:600">Other</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Patterns" style="font-size:1em; font-weight:400">Patterns</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/PHP" style="font-size:1em; font-weight:400">PHP</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/PowerShell" style="font-size:1em; font-weight:400">PowerShell</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/presentations" style="font-size:1em; font-weight:400">presentations</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Ruby" style="font-size:1em; font-weight:400">Ruby</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/RubyGems" style="font-size:1em; font-weight:400">RubyGems</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Scrum" style="font-size:1em; font-weight:400">Scrum</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-5">
+
+
+            <a dataScale="1" href="/bsimser/Tags/SharePoint" style="font-size:2em; font-weight:800">SharePoint</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/SharePoint%202010" style="font-size:1em; font-weight:400">SharePoint 2010</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/SharePoint%20Forums" style="font-size:1em; font-weight:400">SharePoint Forums</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/SimCity" style="font-size:1em; font-weight:400">SimCity</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Speaking" style="font-size:1em; font-weight:400">Speaking</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Special%20Effects" style="font-size:1em; font-weight:400">Special Effects</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/TDD" style="font-size:1em; font-weight:400">TDD</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Team%20System" style="font-size:1em; font-weight:400">Team System</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Terrarium" style="font-size:1em; font-weight:400">Terrarium</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Tree%20Surgeon" style="font-size:1em; font-weight:400">Tree Surgeon</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Unit%20Testing" style="font-size:1em; font-weight:400">Unit Testing</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/User%20Interface" style="font-size:1em; font-weight:400">User Interface</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Visual%20Studio" style="font-size:1em; font-weight:400">Visual Studio</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Website" style="font-size:1em; font-weight:400">Website</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Windows%208" style="font-size:1em; font-weight:400">Windows 8</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/Windows%20Phone" style="font-size:1em; font-weight:400">Windows Phone</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/WordPress" style="font-size:1em; font-weight:400">WordPress</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/WP7" style="font-size:1em; font-weight:400">WP7</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/WPF" style="font-size:1em; font-weight:400">WPF</a>
+        </li>
+        <li class="tag-cloud-tag tag-cloud-tag-1">
+
+
+            <a dataScale="0" href="/bsimser/Tags/XNA" style="font-size:1em; font-weight:400">XNA</a>
+        </li>
+</ul>
+</article>
+<article class="widget-aside-second widget-blog-archives widget">
+    <header>
+        <h1>Archives</h1>
+        
+    </header>
+    
+<div class="archives">
+    <ul class="years">
+
+        <li>
+            <h4>2014</h4>
+             <ul class="archiveMonthList"><li class="first last"><a href="/bsimser/archive/2014/6">June (2)</a></li></ul>
+       </li>
+        <li class="previous">
+            <h4>2013 <span>(9)</span></h4>
+            <ul class="archiveMonthList"><li class="first"><a href="/bsimser/archive/2013/9">September (1)</a></li><li class=""><a href="/bsimser/archive/2013/7">July (1)</a></li><li class=""><a href="/bsimser/archive/2013/4">April (1)</a></li><li class=""><a href="/bsimser/archive/2013/3">March (2)</a></li><li class="last"><a href="/bsimser/archive/2013/2">February (4)</a></li></ul>
+        </li>
+        <li class="previous">
+            <h4>2012 <span>(19)</span></h4>
+            <ul class="archiveMonthList"><li class="first"><a href="/bsimser/archive/2012/10">October (1)</a></li><li class=""><a href="/bsimser/archive/2012/6">June (2)</a></li><li class=""><a href="/bsimser/archive/2012/5">May (4)</a></li><li class=""><a href="/bsimser/archive/2012/4">April (3)</a></li><li class=""><a href="/bsimser/archive/2012/3">March (3)</a></li><li class=""><a href="/bsimser/archive/2012/2">February (4)</a></li><li class="last"><a href="/bsimser/archive/2012/1">January (2)</a></li></ul>
+        </li>
+        <li class="previous">
+            <h4>2011 <span>(27)</span></h4>
+            <ul class="archiveMonthList"><li class="first"><a href="/bsimser/archive/2011/12">December (2)</a></li><li class=""><a href="/bsimser/archive/2011/11">November (2)</a></li><li class=""><a href="/bsimser/archive/2011/9">September (7)</a></li><li class=""><a href="/bsimser/archive/2011/8">August (1)</a></li><li class=""><a href="/bsimser/archive/2011/4">April (3)</a></li><li class=""><a href="/bsimser/archive/2011/3">March (5)</a></li><li class=""><a href="/bsimser/archive/2011/2">February (2)</a></li><li class="last"><a href="/bsimser/archive/2011/1">January (5)</a></li></ul>
+        </li>
+        <li class="previous">
+            <h4>2010 <span>(17)</span></h4>
+            <ul class="archiveMonthList"><li class="first"><a href="/bsimser/archive/2010/12">December (1)</a></li><li class=""><a href="/bsimser/archive/2010/10">October (1)</a></li><li class=""><a href="/bsimser/archive/2010/8">August (2)</a></li><li class=""><a href="/bsimser/archive/2010/7">July (6)</a></li><li class=""><a href="/bsimser/archive/2010/5">May (3)</a></li><li class="last"><a href="/bsimser/archive/2010/4">April (4)</a></li></ul>
+        </li>
+        <li class="previous">
+            <h4>2009 <span>(59)</span></h4>
+            <ul class="archiveMonthList"><li class="first"><a href="/bsimser/archive/2009/12">December (6)</a></li><li class=""><a href="/bsimser/archive/2009/11">November (6)</a></li><li class=""><a href="/bsimser/archive/2009/10">October (6)</a></li><li class=""><a href="/bsimser/archive/2009/9">September (4)</a></li><li class=""><a href="/bsimser/archive/2009/8">August (3)</a></li><li class=""><a href="/bsimser/archive/2009/7">July (5)</a></li><li class=""><a href="/bsimser/archive/2009/6">June (2)</a></li><li class=""><a href="/bsimser/archive/2009/5">May (6)</a></li><li class=""><a href="/bsimser/archive/2009/4">April (10)</a></li><li class=""><a href="/bsimser/archive/2009/3">March (7)</a></li><li class="last"><a href="/bsimser/archive/2009/2">February (4)</a></li></ul>
+        </li>
+        <li class="previous">
+            <h4>2008 <span>(101)</span></h4>
+            <ul class="archiveMonthList"><li class="first"><a href="/bsimser/archive/2008/12">December (5)</a></li><li class=""><a href="/bsimser/archive/2008/11">November (3)</a></li><li class=""><a href="/bsimser/archive/2008/10">October (6)</a></li><li class=""><a href="/bsimser/archive/2008/9">September (5)</a></li><li class=""><a href="/bsimser/archive/2008/8">August (10)</a></li><li class=""><a href="/bsimser/archive/2008/7">July (7)</a></li><li class=""><a href="/bsimser/archive/2008/6">June (7)</a></li><li class=""><a href="/bsimser/archive/2008/5">May (3)</a></li><li class=""><a href="/bsimser/archive/2008/4">April (16)</a></li><li class=""><a href="/bsimser/archive/2008/3">March (11)</a></li><li class=""><a href="/bsimser/archive/2008/2">February (17)</a></li><li class="last"><a href="/bsimser/archive/2008/1">January (11)</a></li></ul>
+        </li>
+        <li class="previous">
+            <h4>2007 <span>(206)</span></h4>
+            <ul class="archiveMonthList"><li class="first"><a href="/bsimser/archive/2007/12">December (12)</a></li><li class=""><a href="/bsimser/archive/2007/11">November (19)</a></li><li class=""><a href="/bsimser/archive/2007/10">October (27)</a></li><li class=""><a href="/bsimser/archive/2007/9">September (2)</a></li><li class=""><a href="/bsimser/archive/2007/8">August (3)</a></li><li class=""><a href="/bsimser/archive/2007/7">July (14)</a></li><li class=""><a href="/bsimser/archive/2007/6">June (23)</a></li><li class=""><a href="/bsimser/archive/2007/5">May (24)</a></li><li class=""><a href="/bsimser/archive/2007/4">April (20)</a></li><li class=""><a href="/bsimser/archive/2007/3">March (25)</a></li><li class=""><a href="/bsimser/archive/2007/2">February (11)</a></li><li class="last"><a href="/bsimser/archive/2007/1">January (26)</a></li></ul>
+        </li>
+        <li class="previous">
+            <h4>2006 <span>(273)</span></h4>
+            <ul class="archiveMonthList"><li class="first"><a href="/bsimser/archive/2006/12">December (13)</a></li><li class=""><a href="/bsimser/archive/2006/11">November (14)</a></li><li class=""><a href="/bsimser/archive/2006/10">October (24)</a></li><li class=""><a href="/bsimser/archive/2006/9">September (22)</a></li><li class=""><a href="/bsimser/archive/2006/8">August (17)</a></li><li class=""><a href="/bsimser/archive/2006/7">July (20)</a></li><li class=""><a href="/bsimser/archive/2006/6">June (29)</a></li><li class=""><a href="/bsimser/archive/2006/5">May (42)</a></li><li class=""><a href="/bsimser/archive/2006/4">April (29)</a></li><li class=""><a href="/bsimser/archive/2006/3">March (20)</a></li><li class=""><a href="/bsimser/archive/2006/2">February (24)</a></li><li class="last"><a href="/bsimser/archive/2006/1">January (19)</a></li></ul>
+        </li>
+        <li class="previous">
+            <h4>2005 <span>(189)</span></h4>
+            <ul class="archiveMonthList"><li class="first"><a href="/bsimser/archive/2005/12">December (16)</a></li><li class=""><a href="/bsimser/archive/2005/11">November (12)</a></li><li class=""><a href="/bsimser/archive/2005/10">October (18)</a></li><li class=""><a href="/bsimser/archive/2005/9">September (23)</a></li><li class=""><a href="/bsimser/archive/2005/8">August (14)</a></li><li class=""><a href="/bsimser/archive/2005/7">July (18)</a></li><li class=""><a href="/bsimser/archive/2005/6">June (15)</a></li><li class=""><a href="/bsimser/archive/2005/5">May (17)</a></li><li class=""><a href="/bsimser/archive/2005/4">April (17)</a></li><li class=""><a href="/bsimser/archive/2005/3">March (17)</a></li><li class=""><a href="/bsimser/archive/2005/2">February (11)</a></li><li class="last"><a href="/bsimser/archive/2005/1">January (11)</a></li></ul>
+        </li>
+        <li class="previous">
+            <h4>2004 <span>(61)</span></h4>
+            <ul class="archiveMonthList"><li class="first"><a href="/bsimser/archive/2004/12">December (8)</a></li><li class=""><a href="/bsimser/archive/2004/11">November (4)</a></li><li class=""><a href="/bsimser/archive/2004/10">October (22)</a></li><li class=""><a href="/bsimser/archive/2004/9">September (7)</a></li><li class=""><a href="/bsimser/archive/2004/8">August (3)</a></li><li class=""><a href="/bsimser/archive/2004/7">July (2)</a></li><li class=""><a href="/bsimser/archive/2004/6">June (12)</a></li><li class=""><a href="/bsimser/archive/2004/5">May (2)</a></li><li class="last"><a href="/bsimser/archive/2004/4">April (1)</a></li></ul>
+        </li>
+    </ul>
+</div>
+</article></div>
+    </aside>
+</div>
+</div>
+<div id="layout-footer" class="group">
+    <footer id="footer">
+        <div id="footer-quad" class="group">
+                                            </div>
+        <div id="footer-sig" class="group">
+            <div class="zone zone-footer">    <div class="credits text-muted"><span class="terms"><a href="http://www.asp.net/terms-of-use">Terms Of Use</a></span> - <span class="poweredby">Powered by <a href="http://www.orchardproject.net" target="_blank">Orchard</a></span></div>
+</div>
+        </div>
+    </footer>
+</div>
+</div>
+
+<script src="//ajax.aspnetcdn.com/ajax/jQuery/jquery-1.11.1.min.js" type="text/javascript"></script>
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js" type="text/javascript"></script>
+
+
+<script type="text/javascript">var omni_guid="43aa96f5-0d59-4a04-95b0-83908769dbcf";</script>
+<script type="text/javascript" src="//az619453.vo.msecnd.net/content/Scripts/prod-omniture.min.js"></script>
+<noscript><a href="http://www.omniture.com" title="Web Analytics"><img src="http://msstonojsaspnet.112.2O7.net/b/ss/msstonojsaspnet/1/H.20.2--NS/0" height="1" width="1" alt="omni" /></a></noscript>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/gist-embed/1.8/gist-embed.min.js"></script>
+
+
+</body>
+</html>
