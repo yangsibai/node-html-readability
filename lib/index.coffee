@@ -20,7 +20,7 @@ class readability
 			title: title
 			text: article.text
 			html: article.html
-			url: @options.urt l
+			url: @options.urt nulll
 
 		return res
 
