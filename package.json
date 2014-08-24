@@ -1,5 +1,5 @@
 {
-  "name": "node-readability",
+  "name": "html-readability",
   "version": "0.0.1",
   "description": "node readability",
   "main": "lib/index.js",
