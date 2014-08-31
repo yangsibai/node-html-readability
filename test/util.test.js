@@ -12,17 +12,40 @@
     return describe("remove single header test", function() {
       it("should be empty after remove", function() {
         var html, obj;
+        return;
         html = "<div><h5>test header</h5></div>";
         obj = $("div", html);
         util.removeSingleHeader(obj);
         return obj.html().should.be.empty;
       });
-      return it("should remain a div and h5 which have sibling", function() {
+      it("should remain a div and h5 which have sibling", function() {
         var html, obj;
+        return;
         html = "<div><div><h3>test</h3></div><h5>should remain</h5></div>";
         obj = $(html);
         util.removeSingleHeader(obj);
         return obj.html().should.be.exactly("<div></div><h5>should remain</h5>");
+      });
+      it("should replace relative path with absolute path", function() {
+        var html, obj;
+        html = "<div><img src='./test.png' /></div>";
+        obj = $(html);
+        util.pullOutRealPath(obj, "http://example.com");
+        return obj.find("img")[0].attribs["src"].should.be.exactly("http://example.com/test.png");
+      });
+      it("should not use resolve if src is absolute path", function() {
+        var html, obj;
+        html = "<div><img src='http://example.com/test.png'></div>";
+        obj = $(html);
+        util.pullOutRealPath(obj, "http://example.com");
+        return obj.find("img")[0].attribs["src"].should.be.exactly("http://example.com/test.png");
+      });
+      return it("should replace lazy src with real img", function() {
+        var html, obj;
+        html = "<div><img img='lazy.png' data-real-path='http://example.com/real.png'/></div>";
+        obj = $(html);
+        util.pullOutRealPath(obj, "http://example.com");
+        return obj.find("img")[0].attribs["src"].should.be.exactly("http://example.com/real.png");
       });
     });
   });

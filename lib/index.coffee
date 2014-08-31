@@ -13,14 +13,20 @@ class readability
 		@$ = cheerio.load(util.washHtml(@options.content))
 
 	run: ()->
+		startTime = new Date().getTime()
 		title = @grabTitle()
+		grabTileElapsedMillseconds = new Date().getTime() - startTime
 		article = @grabArticle()
+		grabArticleElapsedMillseconds = new Date().getTime() - startTime
 
 		res =
 			title: title
 			text: article.text
 			html: article.html
 			url: @options.url
+			time:
+				title: grabTileElapsedMillseconds
+				article: grabArticleElapsedMillseconds
 
 		return res
 
@@ -265,6 +271,8 @@ class readability
 		util.removeSingleHeader(@articleContent)
 
 		util.trimAttributes(@articleContent)
+
+		util.pullOutRealPath(@articleContent,@options.url)
 
 
 module.exports = readability
