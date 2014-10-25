@@ -17,7 +17,7 @@ node.js html readability parser
     var article = {
        title: "", // page title 
        text: "", //text content
-       html: "", //html content
+       html: "", //pretty html content
        time: {
            title: 10, //parse title elapsed milliseconds
            article: 100 //parse content elapsed milliseconds

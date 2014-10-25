@@ -39,5 +39,4 @@ exports.replaceBreaks=(str)->
 	return str.replace(regexps.killBreaks,'<br />')
 
 exports.likeTitle=(str)->
-	console.log str
 	return str and str.search(regexps.title) isnt -1
