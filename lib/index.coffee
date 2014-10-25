@@ -7,6 +7,7 @@ util = require("./util")
 class readability
 	constructor: (@options)->
 		defaultOptions =
+			content: ""
 			debug: false
 		for k of defaultOptions
 			@options[k] = defaultOptions[k] if _.isUndefined(@options[k])
@@ -15,9 +16,9 @@ class readability
 	run: ()->
 		startTime = new Date().getTime()
 		title = @grabTitle()
-		grabTileElapsedMillseconds = new Date().getTime() - startTime
+		grabTileElapsedMilliseconds = new Date().getTime() - startTime
 		article = @grabArticle()
-		grabArticleElapsedMillseconds = new Date().getTime() - startTime
+		grabArticleElapsedMilliseconds = new Date().getTime() - startTime
 
 		res =
 			title: title
@@ -25,8 +26,8 @@ class readability
 			html: article.html
 			url: @options.url
 			time:
-				title: grabTileElapsedMillseconds
-				article: grabArticleElapsedMillseconds
+				title: grabTileElapsedMilliseconds
+				article: grabArticleElapsedMilliseconds
 
 		return res
 
@@ -274,5 +275,8 @@ class readability
 
 		util.pullOutRealPath(@articleContent,@options.url)
 
-
-module.exports = readability
+exports.parse = (htmlContent)->
+	read = new readability
+		content: htmlContent
+		debug: false
+	return read.run()

@@ -4,4 +4,4 @@ node_modules
 *.swp
 demo
 *.map
-.js
+*.js
