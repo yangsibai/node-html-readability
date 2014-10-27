@@ -1,6 +1,6 @@
 {
   "name": "html-readability",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "node readability",
   "main": "bin/index.js",
   "scripts": {

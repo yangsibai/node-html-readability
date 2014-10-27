@@ -24,7 +24,7 @@ node.js html readability parser
 
 ###Usage
 
-**1. pass a object:**
+**1. pass an object:**
 
     var options = {
         url: "http://example.com/article/some-article.html", // url is optional, if supply, can convert relative url to absolute.
@@ -43,7 +43,7 @@ node.js html readability parser
         //some code
     });
 
-**3. pass a url:**
+**3. pass an url:**
 
     var url = "http://example.com/article/some-article.html";
 
