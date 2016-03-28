@@ -94,8 +94,8 @@ class readability
         @prepArticle()
 
         return {
-        text: @articleContent.text()
-        html: @articleContent.html()
+            text: @articleContent.text()
+            html: @articleContent.html()
         }
 
     ###
@@ -276,7 +276,7 @@ class readability
 
         util.trimAttributes(@articleContent)
 
-        util.pullOutRealPath(@articleContent,@options.url)
+        util.pullOutRealPath(@articleContent, @options.url)
 
 exports.parse = (options, cb)->
     if _.isObject(options)
