@@ -1,6 +1,6 @@
 {
   "name": "html-readability",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "node readability",
   "main": "bin/index.js",
   "scripts": {
@@ -21,7 +21,7 @@
     "utility"
   ],
   "author": "yangsibai",
-  "license": "GPL3",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/yangsibai/node-html-readability/issues"
   },
