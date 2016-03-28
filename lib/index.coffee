@@ -5,7 +5,7 @@ url = require("url")
 util = require("./util")
 request = require("request")
 
-class readability
+class Readability
     constructor: (@options)->
         defaultOptions =
             content: ""
@@ -280,17 +280,17 @@ class readability
 
 exports.parse = (options, cb)->
     if _.isObject(options)
-        read = new readability(options)
+        read = new Readability(options)
         cb(null, read.run())
     else if _.isString(options) and util.isURL(options)
         request options, (err, response, body)->
             return cb(err) if err
-            read = new readability
+            read = new Readability
                 url: options
                 content: body.toString()
             cb(null, read.run())
     else if _.isString(options)
-        read = new readability
+        read = new Readability
             content: options
         cb(null, read.run())
     else
