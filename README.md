@@ -1,10 +1,10 @@
-##html-readability
+## html-readability
 
 node.js html readability parser
 
 [![NPM](https://nodei.co/npm/html-readability.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/html-readability/)
 
-###Get started
+### Get started
 
     var readability = require("readability");
     var html = "<html>xxxxxxxxxxx</html>";
@@ -22,7 +22,7 @@ node.js html readability parser
         */
     });
 
-###Usage
+### Usage
 
 **1. pass an object:**
 
