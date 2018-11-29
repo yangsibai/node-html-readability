@@ -1,4 +1,4 @@
-##html-readability
+# html-readability
 
 node.js html readability parser
 
